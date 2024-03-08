@@ -1,0 +1,15 @@
+[project]
+name = "y"
+version = "y"
+description = "Default template for PDM package"
+authors = [
+    {name = "Visakh Chekur Unnikrishnan", email = "visakhchekur@gmail.com"},
+]
+dependencies = []
+requires-python = "==3.12.*"
+readme = "README.md"
+license = {text = "MIT"}
+
+
+[tool.pdm]
+distribution = false
