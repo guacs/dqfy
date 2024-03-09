@@ -5,22 +5,26 @@ import string
 from dataclasses import dataclass
 from typing import Final
 
-from cachetools import LRUCache
 from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from django.core.cache import caches
+from django.core.cache.backends.base import BaseCache
 from django.db import IntegrityError
 
 from .models import Snippet
 
 
-class SnippetCreationError(Exception): ...
+class SnippetCreationError(Exception):
+    ...
 
 
-class SnippetNotFoundError(Exception): ...
+class SnippetNotFoundError(Exception):
+    ...
 
 
-class DecryptionError(Exception): ...
+class DecryptionError(Exception):
+    ...
 
 
 @dataclass
@@ -37,7 +41,7 @@ class SnippetService:
     _min_length: Final[int] = 10
     _salt_length: Final[int] = 16
 
-    _snippet_cache: Final[LRUCache[str, Snippet]] = LRUCache(3000)
+    _snippet_cache: Final[BaseCache] = caches["snippets"]
 
     def get_snippet(self, snippet_id: str, key: str | None = None) -> tuple[str, bool]:
         """Get the snippet for the given snippet ID.
@@ -103,7 +107,7 @@ class SnippetService:
             snippet_instance.snippet_id = _generate_short_id(self._min_length + count)
             try:
                 snippet_instance.save(force_insert=True)
-                self._snippet_cache[snippet_instance.snippet_id] = snippet_instance
+                self._snippet_cache.set(snippet_instance.snippet_id, snippet_instance)
 
                 return snippet_instance.snippet_id
             except IntegrityError:

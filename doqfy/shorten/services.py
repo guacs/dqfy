@@ -2,7 +2,8 @@ import secrets
 import string
 from typing import Final
 
-from cachetools import LRUCache
+from django.core.cache import caches
+from django.core.cache.backends.base import BaseCache
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from django.db import IntegrityError
@@ -10,13 +11,16 @@ from django.db import IntegrityError
 from .models import Url
 
 
-class ShortIdGenerationError(Exception): ...
+class ShortIdGenerationError(Exception):
+    ...
 
 
-class InvalidUrlError(Exception): ...
+class InvalidUrlError(Exception):
+    ...
 
 
-class LongUrlNotFoundError(Exception): ...
+class LongUrlNotFoundError(Exception):
+    ...
 
 
 class ShortenerService:
@@ -25,10 +29,10 @@ class ShortenerService:
     MIN_SHORT_ID_LEN: Final[int] = 8
     MAX_SHORT_ID_LEN: Final[int] = 12
 
-    _short_id_cache: Final[LRUCache[str, str]] = LRUCache(maxsize=1000)
+    _short_id_cache: Final[BaseCache] = caches["short-id"]
     """Caches the mapping from long url to the corresponding short ID."""
 
-    _long_url_cache: Final[LRUCache[str, str]] = LRUCache(maxsize=2000)
+    _long_url_cache: Final[BaseCache] = caches["long-url"]
     """Caches the mapping from short ID to the long url."""
 
     def get_long_url(self, short_id: str) -> str:
@@ -37,7 +41,8 @@ class ShortenerService:
 
         try:
             url = Url.objects.get(short_id=short_id)
-            long_url = self._long_url_cache[short_id] = url.long_url
+            long_url = url.long_url
+            self._long_url_cache.set(short_id, long_url)
 
             return long_url
         except Url.DoesNotExist as ex:
@@ -90,8 +95,8 @@ class ShortenerService:
         assert url.short_id is not None
 
         short_id = url.short_id
-        self._short_id_cache[long_url] = short_id
-        self._long_url_cache[short_id] = long_url
+        self._short_id_cache.set(short_id, long_url)
+        self._long_url_cache.set(long_url, short_id)
 
         return short_id
 
