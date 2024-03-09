@@ -6,7 +6,7 @@ from django.http.request import HttpRequest
 from django.shortcuts import render
 from django.urls import reverse
 
-from .services import InvalidUrlError, ShortenerService, ShortIdGenerationError
+from .services import InvalidUrlError, LongUrlNotFoundError, ShortenerService, ShortIdGenerationError
 
 
 def index(request: HttpRequest) -> HttpResponse:
@@ -22,6 +22,16 @@ def index(request: HttpRequest) -> HttpResponse:
             raise ValidationError("`short_url` must be provided if `long_url` is provided")
 
     return render(request, "shorten.html", context)
+
+
+def redirect_to_long_url(request: HttpRequest, short_id: str) -> HttpResponse:
+    shortener = ShortenerService()
+    try:
+        long_url = shortener.get_long_url(short_id)
+
+        return HttpResponseRedirect(long_url)
+    except LongUrlNotFoundError:
+        return render(request, "not-found.html")
 
 
 def shorten_url(request: HttpRequest) -> HttpResponse:

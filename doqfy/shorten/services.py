@@ -16,13 +16,32 @@ class ShortIdGenerationError(Exception): ...
 class InvalidUrlError(Exception): ...
 
 
+class LongUrlNotFoundError(Exception): ...
+
+
 class ShortenerService:
     """Service that handles the URL shortening/retrieval."""
 
     MIN_SHORT_ID_LEN: Final[int] = 8
     MAX_SHORT_ID_LEN: Final[int] = 12
 
-    _cache: Final[LRUCache[str, str]] = LRUCache(maxsize=1000)
+    _short_id_cache: Final[LRUCache[str, str]] = LRUCache(maxsize=1000)
+    """Caches the mapping from long url to the corresponding short ID."""
+
+    _long_url_cache: Final[LRUCache[str, str]] = LRUCache(maxsize=2000)
+    """Caches the mapping from short ID to the long url."""
+
+    def get_long_url(self, short_id: str) -> str:
+        if long_url := self._long_url_cache.get(short_id, None):
+            return long_url
+
+        try:
+            url = Url.objects.get(short_id=short_id)
+            long_url = self._long_url_cache[short_id] = url.long_url
+
+            return long_url
+        except Url.DoesNotExist as ex:
+            raise LongUrlNotFoundError from ex
 
     def get_short_url(self, long_url: str, base_url: str) -> str:
         short_id = self.get_or_create_short_id(long_url)
@@ -49,7 +68,7 @@ class ShortenerService:
         except ValidationError as ex:
             raise InvalidUrlError from ex
 
-        if short_id := self._cache.get(long_url, None):
+        if short_id := self._short_id_cache.get(long_url, None):
             return short_id
 
         try:
@@ -69,9 +88,12 @@ class ShortenerService:
                 raise ShortIdGenerationError
 
         assert url.short_id is not None
-        self._cache[long_url] = url.short_id
 
-        return url.short_id
+        short_id = url.short_id
+        self._short_id_cache[long_url] = short_id
+        self._long_url_cache[short_id] = long_url
+
+        return short_id
 
 
 def _generate_short_id(length: int) -> str:
