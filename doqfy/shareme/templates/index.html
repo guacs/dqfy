@@ -17,6 +17,8 @@
 
       <h1 class="text-3xl font-medium text-center">ShareMe</h1>
 
+      <p> LINK: {{ link }}</p>
+
       {% if link %}
 
         <div class="flex flex-col mt-3">
@@ -79,6 +81,10 @@
             </label>
             <input type="text" id="key" name="key" placeholder="Enter the key to encrypt with" class="rounded-md bg-gray-100 border-none"/>        
           </div>
+
+          {% if error_message %}
+            <p class="text-red-500 font-medium text-center">{{ error_message }}</p>
+          {% endif %}
 
           <div class="flex justify-center">
             <button type="submit" class="bg-green-600 rounded-md p-3 font-medium text-lg text-white max-w-40 hover:bg-green-700">Generate Link</button>

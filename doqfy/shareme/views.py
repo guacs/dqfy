@@ -1,12 +1,11 @@
 from typing import Any
 
-from django.http import HttpRequest
+from django.http import HttpRequest, QueryDict
 from django.http.response import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
-from django.http import QueryDict
 
-from .services import SnippetCreationError, SnippetNotFoundError, SnippetService, DecryptionError
+from .services import DecryptionError, SnippetCreationError, SnippetNotFoundError, SnippetService
 
 
 def index(request: HttpRequest) -> HttpResponse:
