@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+
+{% block body %}
+
+  <div class="flex justify-center h-screen items-center">
+
+    <div class="flex flex-col gap-y-3 border p-10 shadow-md bg-white rounded-md min-w-48">
+      <h1 class="text-3xl font-medium text-center">SHORTEN</h1>
+      <p class="text-center">Welcome to the URL shortener service!</p>
+
+      {% if short_url %}
+
+        <div class="flex flex-col mt-3">
+          <label for="long-url" class="font-medium text-sm inline-flex gap-x-1 items-center">
+            <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
+            </svg>
+            <span>URL</span>
+          </label>
+
+          <input type="text" disabled id="long-url" name="long_url" placeholder="Enter your long URL here" value="{{ long_url }}" class="rounded-md bg-gray-100 border-none"/>
+
+          {% if error_message %}
+            <p class="text-red-500 font-medium text-center mt-3">{{ error_message }}</p>
+          {% endif %}
+
+          <div class="mt-2 flex flex-col">
+            <label for="short-url" class="font-medium text-sm inline-flex gap-x-1 items-center">
+              <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
+              </svg>
+              <span>Short URL</span>
+            </label>
+  
+            <input type="text" disabled id="short-url" value="{{ short_url }}" class="rounded-md bg-gray-100 border-none"/>
+          </div>
+
+          <div class="flex mt-4 justify-around">
+             <a href="{{ short_url }}" class="inline-flex items-center gap-x-1 p-2 rounded-md border hover:bg-gray-200">
+              <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+              </svg>
+              <span>Visit URL</span>
+            </a>
+
+            <button type="button" class="inline-flex items-center gap-x-1 p-2 rounded-md border hover:bg-gray-200" onclick="copyShortUrlToClipboard()">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" />
+              </svg>
+              <span>Copy</span>
+            </button>
+
+          </div>
+
+          <a class="mt-4 mb-1 bg-green-600 rounded-md text-white py-2 font-medium hover:bg-green-700 text-center" href="{% url 'shorten:index' %}">
+            Shorten another URL
+          </a>
+        </div>
+
+      {% else %}
+
+        <form action="{% url 'shorten:index' %}" method="post" class="flex flex-col mt-3">
+
+          {% csrf_token %}
+
+          <label for="long-url" class="font-medium text-sm inline-flex gap-x-1 items-center">
+            <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
+            </svg>
+            <span>URL</span>
+          </label>
+
+          <input required type="text" id="long-url" name="long_url" placeholder="Enter your long URL here" value="{{ long_url }}" class="rounded-md bg-gray-100 border-none"></input>
+
+          {% if error_message %}
+            <p class="text-red-500 font-medium text-center mt-3">{{ error_message }}</p>
+          {% endif %}
+
+          <button type="submit" class="mt-4 mb-1 bg-green-600 rounded-md text-white py-2 font-medium hover:bg-green-700">
+            Shorten URL
+          </submit>
+          
+        </form>
+
+      {% endif %}
+
+    </div>
+  </div>
+
+  <div class="absolute bottom-0 mr-5 mb-5 right-0 opacity-0 transition-opacity" id="success-alert">
+    <div class="flex items-center p-4 mb-4 text-sm text-green-200 rounded-lg bg-green-800" role="alert">
+      <svg class="flex-shrink-0 inline w-4 h-4 me-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+        <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
+      </svg>
+      <span class="sr-only">Info</span>
+      <div>
+        <span class="font-medium">Success!</span> Copied the URL to the clipboard.
+      </div>
+    </div>
+  </div>
+
+  <script>
+
+    function copyShortUrlToClipboard() {
+      const element = document.getElementById("short-url");
+      if (!element) {
+        return;
+      }
+
+      navigator.clipboard.writeText(element.value);      
+
+      const successAlert = document.getElementById("success-alert");
+      if (!successAlert) {
+        return;
+      }
+      successAlert.classList.add("opacity-100");
+
+      window.setTimeout(hideSuccessAlert, 2500);
+    }
+
+    function hideSuccessAlert() {
+      const successAlert = document.getElementById("success-alert");
+      if (!successAlert) {
+        return;
+      }
+      successAlert.classList.remove("opacity-100");
+
+    }
+  
+  </script>
+
+{% endblock body %}
