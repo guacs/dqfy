@@ -13,26 +13,37 @@ class SnippetCreationError(Exception): ...
 
 class SnippetNotFoundError(Exception): ...
 
+class DecryptionError(Exception): ...
+
 
 class SnippetService:
     _max_retry_count: Final[int] = 5
     _min_length: Final[int] = 10
 
-    _snippet_cache: Final[LRUCache[str, str]] = LRUCache(2000)
+    _snippet_cache: Final[LRUCache[str, tuple[str, bool]]] = LRUCache(2000)
 
-    def get_snippet(self, snippet_id: str, key: str | None = None) -> str:
-        if not (raw_snippet := self._snippet_cache.get(snippet_id, None)):
+    def get_snippet(self, snippet_id: str, key: str | None = None) -> tuple[str, bool]:
+        """Get the snippet for the given snippet ID.
+
+        Returns a tuple containing the snippet and a boolean indicating whether the returned
+        snippet is encrypted or not. If `True`, then it's encrypted and if `False`, then it's
+        decrypted.
+        """
+        if snippet_details := self._snippet_cache.get(snippet_id, None):
+            raw_snippet, encrypted = snippet_details
+        else:
             try:
-                raw_snippet = Snippet.objects.get(snippet_id=snippet_id).snippet
+                snippet = Snippet.objects.get(snippet_id=snippet_id)
+                raw_snippet, encrypted = snippet.snippet, snippet.encrypted
             except Snippet.DoesNotExist as ex:
                 raise SnippetNotFoundError from ex
 
-            self._snippet_cache[snippet_id] = raw_snippet
+            self._snippet_cache[snippet_id] = (raw_snippet, encrypted)
 
         if key:
-            return self._decrypt(raw_snippet, key)
+            return self._decrypt(raw_snippet, key), False
 
-        return raw_snippet
+        return raw_snippet, encrypted
 
     def add_and_get_shareable_link(self, snippet: str, base_url: str, key: str | None = None) -> str:
         snippet_id = self.add_snipppet(snippet, key)
@@ -57,9 +68,10 @@ class SnippetService:
         count = 0
         while count < self._max_retry_count:
             short_id = _generate_short_id(self._min_length + count)
-            snippet_instance = Snippet(snippet_id=short_id, snippet=snippet)
+            snippet_instance = Snippet(snippet_id=short_id, snippet=snippet, encrypted=bool(key))
             try:
                 snippet_instance.save(force_insert=True)
+                self._snippet_cache[short_id] = (snippet, bool(key))
 
                 return short_id
             except IntegrityError:
@@ -74,6 +86,10 @@ class SnippetService:
         return content + key
 
     def _decrypt(self, content: str, key: str) -> str:
+
+        if len(key) < 10:
+            raise DecryptionError
+
         actual_content_length = len(content) - len(key)
 
         return content[:actual_content_length]

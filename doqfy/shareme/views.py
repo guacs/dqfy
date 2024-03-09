@@ -6,7 +6,7 @@ from django.shortcuts import render
 from django.urls import reverse
 from django.http import QueryDict
 
-from .services import SnippetCreationError, SnippetService
+from .services import SnippetCreationError, SnippetNotFoundError, SnippetService, DecryptionError
 
 
 def index(request: HttpRequest) -> HttpResponse:
@@ -18,6 +18,26 @@ def index(request: HttpRequest) -> HttpResponse:
         context["link"] = link
 
     return render(request, "index.html", context)
+
+
+def get_snippet(request: HttpRequest, snippet_id: str) -> HttpResponse:
+    key = None
+    if request.method == "POST":
+        # Encryption key.
+        key = request.POST.get("key", None)
+
+    share_service = SnippetService()
+    try:
+        snippet, encrypted = share_service.get_snippet(snippet_id, key)
+        context = {"snippet": snippet, "encrypted": encrypted, "snippet_id": snippet_id}
+
+        return render(request, "snippet.html", context)
+    except SnippetNotFoundError:
+        return render(request, "not-found.html")
+    except DecryptionError:
+        context = {"encrypted": True, "snippet_id": snippet_id, "error_message": "Invalid encryption key."}
+
+        return render(request, "snippet.html", context)
 
 
 def create_shareable_link(request: HttpRequest) -> HttpResponse:
