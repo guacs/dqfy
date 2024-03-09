@@ -5,7 +5,11 @@ description = "Default template for PDM package"
 authors = [
   { name = "Visakh Chekur Unnikrishnan", email = "visakhchekur@gmail.com" },
 ]
-dependencies = ["django>=5.0.3", "django-admin>=2.0.2"]
+dependencies = [
+    "django>=5.0.3",
+    "django-admin>=2.0.2",
+    "cachetools>=5.3.3",
+]
 requires-python = "==3.12.*"
 readme = "README.md"
 license = { text = "MIT" }
@@ -13,6 +17,9 @@ license = { text = "MIT" }
 
 [project.optional-dependencies]
 lint = ["ruff>=0.3.1"]
+dev = [
+    "django-stubs[compatible-mypy]>=4.2.7",
+]
 
 [tool.pdm]
 distribution = false
